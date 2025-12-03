@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Merry Christmas — Interactive Scene</title>
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    overflow: hidden;
+    color: #fff;
+    background: #071226;
+  }
+
+  .scene{
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background-image: url('snow_background.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+  }
+
+  .title{
+    position: absolute;
+    left: 50%;
+    top: 6%;
+    transform: translateX(-50%);
+    font-size: clamp(28px,4vw,64px);
+    letter-spacing: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #ffefc7;
+    text-shadow: 0 6px 18px rgba(0,0,0,0.6), 0 0 8px rgba(255,200,120,0.06);
+    z-index: 40;
+    pointer-events: none;
+  }
+
+  .ground{
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 22%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(234,246,255,0.95));
+    border-top-left-radius: 50% 12%;
+    border-top-right-radius: 50% 12%;
+    box-shadow: 0 -6px 30px rgba(0,0,0,0.25) inset;
+    z-index: 15;
+  }
+
+  .gift{
+    position: absolute;
+    left: 50%;
+    top: -25%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: auto;
+    z-index: 50;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform .2s ease;
+  }
+
+  .gift img{
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  }
+
+  .openText{
+    position: absolute;
+    top: calc(100% - 18%);
+    left: 50%;
+    transform: translateX(-50%);
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(90deg,#ff7a7a,#ffd95a);
+    padding: 8px 14px;
+    border-radius: 999px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    z-index: 55;
+    display: none;
+  }
+
+  .videoOverlay{
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.7), rgba(0,0,0,0.9));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    backdrop-filter: blur(4px);
+    display: none;
+  }
+  .videoBox{
+    width: min(90vw, 1100px);
+    max-height: 85vh;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+  .videoBox video{
+    width: 100%;
+    height: 100%;
+    display: block;
+    background: #000;
+  }
+  .closeBtn{
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    border: none;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    z-index: 210;
+  }
+</style>
+</head>
+<body>
+<div class="scene" id="scene">
+
+  <div class="title">Merry Christmas</div>
+
+  <div class="gift" id="gift" aria-hidden="true" title="Click to open">
+    <img src="gift_real.jpg" alt="Hộp quà"/>
+  </div>
+
+  <div class="openText" id="openText">Mở hộp quà nhé</div>
+  <div class="ground"></div>
+</div>
+
+<div class="videoOverlay" id="videoOverlay" aria-hidden="true">
+  <div class="videoBox" role="dialog" aria-label="Video">
+    <button class="closeBtn" id="closeVideo">✕</button>
+    <video id="player" playsinline preload="auto" controls></video>
+  </div>
+</div>
+
+<script>
+const gift = document.getElementById('gift');
+const openText = document.getElementById('openText');
+let giftY = -window.innerHeight*0.25;
+let velocity = 0;
+let landed = false;
+
+function placeGiftAt(y){
+  gift.style.top = y + 'px';
+}
+
+function startGiftDrop(){
+  giftY = -120;
+  placeGiftAt(giftY);
+  velocity = 0;
+  landed = false;
+  gift.setAttribute('aria-hidden','false');
+  const groundY = window.innerHeight * 0.68;
+  function tick(){
+    velocity += 0.9;
+    giftY += velocity;
+    if(giftY >= groundY){
+      giftY = groundY;
+      placeGiftAt(giftY);
+      landed = true;
+      openText.style.display='block';
+      openText.style.opacity='0';
+      openText.animate([{opacity:0, transform:'translateX(-50%) translateY(6px)'},{opacity:1, transform:'translateX(-50%) translateY(0)'}], {duration:450, fill:'forwards', easing:'ease-out'});
+      return;
+    } else {
+      placeGiftAt(giftY);
+      requestAnimationFrame(tick);
+    }
+  }
+  requestAnimationFrame(tick);
+}
+setTimeout(startGiftDrop, 2000);
+
+let opened = false;
+const overlay = document.getElementById('videoOverlay');
+const player = document.getElementById('player');
+const closeVideo = document.getElementById('closeVideo');
+
+const VIDEO_1 = 'video1.mp4';
+const VIDEO_2 = 'video2.mp4';
+let current = 0;
+
+gift.addEventListener('click', async ()=>{
+  if(!landed) return;
+  if(opened) return;
+  opened = true;
+  openText.style.display='none';
+  overlay.style.display='flex';
+  overlay.setAttribute('aria-hidden','false');
+
+  current = 1;
+  await playVideo(VIDEO_1);
+});
+
+async function playVideo(src){
+  return new Promise((resolve)=>{
+    player.src = src;
+    player.muted = false;      
+    player.volume = 1;
+    player.loop = false;
+    player.controls = true;
+    player.playsInline = true; // iOS inline
+    player.load();
+
+    const playPromise = player.play();
+    if(playPromise !== undefined){
+      playPromise.then(()=>{}).catch(()=>{
+        // tạm thời mute để trình duyệt cho phép autoplay
+        player.muted = true;
+        player.play().then(()=>{ player.muted = false; });
+      });
+    }
+
+    player.onended = async ()=>{
+      if(current === 1){
+        current = 2;
+        await playVideo(VIDEO_2);
+      } else {
+        closeOverlay();
+      }
+      resolve();
+    };
+  });
+}
+
+closeVideo.addEventListener('click', closeOverlay);
+function closeOverlay(){
+  player.pause();
+  player.src = '';
+  overlay.style.display='none';
+  overlay.setAttribute('aria-hidden','true');
+}
+</script>
+</body>
+</html>
+
+
